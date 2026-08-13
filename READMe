@@ -1,0 +1,79 @@
+# Research Assistant CLI
+
+A command-line tool that sends a question to the OpenAI API and returns a structured research summary, saving each query and answer locally as JSON.
+
+Built as the capstone project for Step 1 (Core Fundamentals) of the AI Engineer roadmap — ties together Python OOP, error handling/retries, JSON handling, `.env`-based API auth, and prompt engineering.
+
+## Features
+
+- Ask a question from the command line
+- Retry logic for transient API failures (timeouts, rate limits, server errors)
+- Structured system prompt so responses are consistent, not just freeform chat
+- Saves every question + answer to a local JSON file (a running research log)
+
+## Requirements
+
+- Python 3.10+
+- An OpenAI API key with available credits
+
+## Setup
+
+```bash
+# create and activate a virtual environment
+python3 -m venv venv
+source venv/bin/activate      # Mac/Linux
+venv\Scripts\activate         # Windows
+
+# install dependencies
+pip install openai python-dotenv
+
+# freeze dependencies (optional, for sharing the project)
+pip freeze > requirements.txt
+```
+
+Create a `.env` file in the project root (never commit this):
+
+```
+OPENAI_API_KEY=sk-proj-your-actual-key-here
+```
+
+`.gitignore` already excludes `venv/` and `.env` — don't commit either.
+
+## Usage
+
+```bash
+python ResearchAssistant.py "What is retrieval-augmented generation?"
+```
+
+This will:
+1. Send your question to the OpenAI API
+2. Print a structured answer to the terminal
+3. Save the question and answer to `research_log.json`
+
+## Project structure
+
+```
+Research-Assistant_CLI/
+├── venv/                  # virtual environment (not committed)
+├── .env                   # API key (not committed)
+├── .gitignore
+├── ResearchAssistant.py   # main script
+├── research_log.json      # saved Q&A history (created after first run)
+└── README.md
+```
+
+## How it works
+
+`ResearchAssistant` is a class that wraps the OpenAI client:
+
+- `__init__` — sets up the client using the API key loaded from `.env`
+- `ask(question)` — sends the question to the model, retrying up to 3 times on timeouts or rate-limit/server errors; returns the response text
+- `save_result(question, answer)` — appends the Q&A pair to `research_log.json`
+
+The script's entry point reads the question from `sys.argv`, calls `ask()`, prints the result, and saves it.
+
+## Notes
+
+- Retryable errors: timeouts, rate limits, server errors
+- Non-retryable errors: bad requests, auth failures — these raise immediately since retrying won't fix them
+- Uses `gpt-4o-mini` by default for cost efficiency during development
